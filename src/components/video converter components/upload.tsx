@@ -1,5 +1,11 @@
+import DnD from "./DnD"
+
 export default function Upload() {
     return(
-        <section></section>
+        <>
+            <div className="">
+                <DnD />
+            </div>
+        </>
     )
 }
