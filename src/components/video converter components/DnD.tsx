@@ -3,29 +3,188 @@
 //import type React from "react";
 import { useState, useRef, useEffect } from "react";
 import { useDropzone } from 'react-dropzone';
+import { useForm } from 'react-hook-form'
 import Warning from "./warning";
 import { Music } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { VideoOptions } from "@/types/compression";
+import type { AudioOptions } from "@/types/compression";
+import VideoSettings from "./videoSettings";
+import AudioSettings from "./audioSettings";
+import { BuildVideoArgs } from "@/lib/buildVideoArgs";
+import { BuildAudioArgs } from "@/lib/buildAudioArgs";
 import { Tabs, TabsList, TabsTrigger, TabsContent} from "@/components/ui/tabs"
-import { Slider } from "@/components/ui/slider"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Progress } from "@/components/ui/progress"
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 import { fetchFile, toBlobURL } from '@ffmpeg/util';
 
+
 export default function DnD() {
     const [mediafile, setMediaFile] = useState<File | null>(null);
-    const [crf, setCrf] = useState([23]);
-    const [startTime, setStartTime] = useState("");
-    const [endTime, setEndTime] = useState("");
     const [loaded, setLoaded] = useState(false);
     const [status, setStatus] = useState('');
+    const [ConversionStatus, setConversionStatus] = useState('');
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState("video");
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadIsRunning, setUploadIsRunning] = useState(false);
+    const [compressionProgress, setCompressionProgress] = useState(0);
+    const [compressIsRunning, setCompressIsRunning] = useState(false);
+    const [videoFile, setVideoFile] = useState<File | null>(null);
+    const [downloadName, setDownloadName] = useState<string>("compressed-video.mp4")
 
+    //new ffmpeg call/creation
     const ffmpegRef = useRef(new FFmpeg());
+
+    //initialize the video form
+    const videoForm = useForm<VideoOptions>({
+        defaultValues: {
+            crf: 23,
+            ratio: true,
+            removeAudio: false,
+            startTime: '',
+            endTime: '',
+            quality: 'none',
+            format: 'none',
+            codec: 'auto',
+            fps: 'none'
+        },
+    })
+
+    //initialize the audio form
+    const audioForm = useForm<AudioOptions>({
+        defaultValues: {
+            bitrate: 'original',
+            audioCodec: 'original',
+            sampleRate: 'original',
+            startTime: 'original',
+            endTime: 'original'
+            },
+    })
+
+    //memory cleanup in case the component unmounts or user navigates away, or page re-renders
+    useEffect(() => {
+        return () => {
+            if (videoUrl) URL.revokeObjectURL(videoUrl)
+        }
+    }, [videoUrl])
+
+    useEffect(() => {
+        const ffmpeg = ffmpegRef.current
+
+        const handleProgress = ({ progress }: { progress: number }) => {
+            setCompressionProgress(Math.round(progress * 100))
+        }
+        ffmpeg.on('progress', handleProgress)
+
+        return () => {
+            ffmpeg.off('progress', handleProgress)
+        }
+    }, [])
+
+    //submitting the video comression form
+    const onVideoSubmit = async (data: VideoOptions) => {
+         try {
+            console.log(data)
+
+            if (!mediafile) return
+
+            const ffmpeg = ffmpegRef.current
+
+            setCompressIsRunning(true)
+            setCompressionProgress(0)
+            setConversionStatus("Preparing media engine sandbox...")
+
+            const extension =
+                data.format === "none"
+                    ? mediafile.name.split(".").pop()!
+                    : data.format.toLowerCase()
+
+            const outputName = `compressed.${extension}`
+
+            try {
+                await ffmpeg.deleteFile(mediafile.name)
+            } catch {
+                // file didn't exist, ignore
+            }
+            try {
+                await ffmpeg.deleteFile(outputName)
+            } catch {
+                // file didn't exist, ignore
+            }
+
+            await ffmpeg.writeFile(
+                mediafile.name,
+                await fetchFile(mediafile)
+            )
+
+            setConversionStatus("Analyzing editing options...")
+
+            const args = BuildVideoArgs(
+                data,
+                mediafile.name,
+                outputName
+            )
+
+            console.log("Output name:", outputName)
+            console.log("FFmpeg args:", args)
+
+            // Run FFmpeg
+            console.log("Starting FFmpeg execution...")
+
+            await ffmpeg.exec(args)
+
+            console.log("FFmpeg finished successfully")
+
+            setConversionStatus("Processing complete! Unpacking results...")
+
+            // Read output
+            console.log("Trying to read:", outputName)
+
+            const output = await ffmpeg.readFile(outputName)
+
+            console.log("Output successfully read:", output)
+
+            if (!(output instanceof Uint8Array)) {
+                throw new Error("Expected binary output from FFmpeg")
+            }
+
+            const videoMimeTypes: Record<string, string> = {
+                mp4: "video/mp4",
+                mov: "video/quicktime",
+                mkv: "video/x-matroska",
+                webm: "video/webm",
+            }
+
+            const blob = new Blob(
+                [new Uint8Array(output)],
+                {
+                    type:
+                        videoMimeTypes[extension] ??
+                        "application/octet-stream",
+                }
+            )
+            //memory cleanup so user can re-convert or run another operation
+            if (videoUrl) {
+                URL.revokeObjectURL(videoUrl)
+            }
+            const url = URL.createObjectURL(blob)
+
+            setVideoUrl(url)
+            setDownloadName(outputName)
+            setConversionStatus("Ready to view and download!")
+            setCompressIsRunning(false)
+
+            await ffmpeg.deleteFile(mediafile.name)
+            await ffmpeg.deleteFile(outputName)
+
+        } catch (error) {
+            console.error("Compression failed:", error)
+            setConversionStatus("Compression failed.")
+        }
+    }
+
+    //submitting the Audio compression form
+    const onAudioSubmit = async (data: AudioOptions) => {}
 
     // This handles the entire drag-and-drop state machine automatically
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -40,27 +199,46 @@ export default function DnD() {
         }
     });
 
-    //run upload and file preparation
-    const startProcess = (file: File) => {
+    //run ffmpeg local file loading while uploading file
+    const startProcess = async (file: File) => {
         setUploadProgress(0);
         setUploadIsRunning(true);
 
-        let count = 0;
-        const interval = setInterval(() => {
-            count++;
-            setUploadProgress(count);
+        // 1. Kick off Wasm loading in the background
+        const ffmpegPromise = loadFFmpeg().catch((err) => {
+            console.error("Failed to load FFmpeg engine:", err);
+            return false;
+        });
 
-            if (count >= 100) {
-                clearInterval(interval)
-                setTimeout(() => {
-                    setUploadIsRunning(false);
-                    setMediaFile(file);
-                }, 500);
-            }
-        }, 30)
+        // 2. Run your smooth UI progress bar
+        let count = 0;
+        await new Promise<void>((resolve) => {
+            const interval = setInterval(() => {
+                count++;
+                setUploadProgress(count);
+
+                if (count >= 100) {
+                    clearInterval(interval)
+                    resolve();
+                }
+            }, 30);
+        });
+
+        // 3. Ensure FFmpeg is ACTUALLY done loading before unlocking the UI
+        const loadedSuccessfully = await ffmpegPromise;
+
+        if (loadedSuccessfully !== false) {
+            setTimeout(() => {
+                setUploadIsRunning(false);
+                setMediaFile(file);
+                console.log("Upload successful for the chosen file....");
+            }, 500);
+        } else {
+            setUploadIsRunning(false);
+        }
     }
     
-    //check file type
+    //check file type & display features
     const isVideo = mediafile?.type.startsWith("video/") ?? false
     const isAudio = mediafile?.type.startsWith("audio/")?? false
     const previewURL = mediafile ? URL.createObjectURL(mediafile) : null;
@@ -81,7 +259,7 @@ export default function DnD() {
     }, [isVideo, isAudio])
 
     
-    //Load FFmpeg library into the browser page
+    //Load FFmpeg library into the browser page from files
     const loadFFmpeg = async () => {
         setStatus('Loading FFmpeg binaries...');
         const ffmpeg = ffmpegRef.current;
@@ -100,20 +278,9 @@ export default function DnD() {
         
         setLoaded(true);
         setStatus('FFmpeg Ready for Action!');
+        console.log("Upload successful....", status);
     };
 
-    //video compressor slider value functions
-    const getLabel = (value: number) => {
-        if (value <= 18) return "High Quality"
-        if (value <= 23) return "Balanced"
-        if (value <= 28) return "Small Size"
-        return <span className="text-red-500">Extreme Compression</span>
-    }
-
-    const processFile = (file: File) => {
-        console.log(file.name)
-        //upload logic
-    };
 
     return(
         <>
@@ -142,7 +309,7 @@ export default function DnD() {
             <div className={`w-screen h-screen fixed inset-0 items-center bg-black/50 z-10 p-20 
             justify-center ${uploadIsRunning ? "flex flex-col" : "hidden"}`} id="loader">
                 <div className="flex flex-row justify-between items-center w-1/2 mx-auto px-10 pt-5 bg-white">
-                    <p>Preparing...</p>
+                    <p>{status}</p>
                     <p>{uploadProgress} %</p>
                 </div>
                 <div className="bg-white w-1/2 px-10 pb-5 mx-auto">
@@ -192,98 +359,41 @@ export default function DnD() {
                             </div>
                         </div>
                     )}
-                    <form>
-                        <div className="w-full mb-10">
-                            <b className="mb-2">Compression strength :  </b>
-                            <span>{getLabel(crf[0])} ({crf[0]})</span>
-                            <Slider min={0} max={51} step={1} value={crf} onValueChange={setCrf} className="mt-3" />
-                            <div className="flex justify-between text-sm text-gray-500">
-                                <span>Best Quality</span>
-                                <span>Smallest Size</span>
-                            </div>
-                        </div>
-                        <div className="flex flex-row items-center mb-5 justify-between flex-wrap">
-                            <div>
-                                <Checkbox id="aspect-ratio" name="aspect-ratio" defaultChecked className="inline-block" />
-                                <b className="mx-2">Keep Aspect Ratio</b>
-                            </div>
-                            <div>
-                                <Checkbox id="remove-audio" name="remove-audio" className="inline-block" />
-                                <b className="mx-2">Remove Audio</b>
-                            </div>
-                            <div>
-                                <label>
-                                    <b className="mx-2">Trim Video : From</b>
-                                    <input placeholder="00:00:00" value={startTime} className="border-solid border 
-                                    border-black px-2 rounded-2xl mx-2" 
-                                    onChange={(e) => setStartTime(e.target.value)} /> <b>To</b>
-                                    <input placeholder="00:00:00" value={endTime} className="border-solid border 
-                                    border-black px-2 rounded-2xl mx-2"
-                                    onChange={(e) => setEndTime(e.target.value)} />
-                                </label>
-                            </div>
-                        </div>
-                        <div className="flex flex-row w-full flex-wrap justify-between">
-                            <label>
-                                <b className="mb-1 px-1 md:block">Resolution Quality</b>
-                                <Select>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Resolution" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="1080p">1080p</SelectItem>
-                                    <SelectItem value="720p">720p</SelectItem>
-                                    <SelectItem value="480p">480p</SelectItem>
-                                    <SelectItem value="360p">360p</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            </label>
-                            <label>
-                                <b className="mb-1 px-1 md:block">Video Format</b>
-                                <Select>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Format" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="MP4">MP4</SelectItem>
-                                    <SelectItem value="MKV">MKV</SelectItem>
-                                    <SelectItem value="MOV">MOV</SelectItem>
-                                    <SelectItem value="WebM">WebM</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            </label>
-                            <label>
-                                <b className="mb-1 px-1 md:block">Video Codec</b>
-                                <Select>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Codec" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="h264">H.264</SelectItem>
-                                    <SelectItem value="H.265/HEVC">H.265</SelectItem>
-                                    <SelectItem value="VP9">VP9</SelectItem>
-                                    <SelectItem value="AV1">AV1</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            </label>
-                            <label>
-                                <b className="mb-1 px-1 md:block">Frame Rate</b>
-                                <Select>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="FPS" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="60">60</SelectItem>
-                                    <SelectItem value="30">30</SelectItem>
-                                    <SelectItem value="24">24</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            </label>
-                        </div>
-                        <button type="button" className="rounded-3xl w-fit px-7 py-2 text-white bg-blue-700
+                    <form onSubmit={videoForm.handleSubmit(onVideoSubmit)}>
+                        <VideoSettings
+                            control={videoForm.control}
+                            register={videoForm.register}
+                            watch={videoForm.watch}
+                        />
+                        <button type="submit" className="rounded-3xl w-fit px-7 py-2 text-white bg-blue-700
                         mt-12 mb-5">
                             Compress
                         </button>
+                        {videoUrl && (
+                            <div>
+                                <h3 className="text-md font-bold mb-2 text-green-400">Output Result (Processed locally):</h3>
+                                <video src={videoUrl} controls className="w-full rounded-lg border border-slate-700" />
+                                <div>
+                                    <a href={videoUrl} download={downloadName}>
+                                        <button type="submit" className="rounded-3xl w-fit px-7 py-2 text-white bg-blue-700
+                                        mt-12 mb-5">
+                                            Download {downloadName}
+                                        </button>
+                                    </a>
+                                </div>
+                            </div>
+                        )}
+                
+                        <div className={`w-screen h-screen fixed inset-0 items-center bg-black/50 z-10 p-20 
+                        justify-center ${compressIsRunning ? "flex flex-col" : "hidden"}`} id="loader">
+                            <div className="flex flex-row justify-between items-center w-1/2 mx-auto px-10 pt-5 bg-white">
+                                <p>{ConversionStatus}</p>
+                                <p>{compressionProgress} %</p>
+                            </div>
+                            <div className="bg-white w-1/2 px-10 pb-5 mx-auto">
+                                <Progress value={compressionProgress} className="m-auto" />
+                            </div>
+                        </div>
                     </form>
                 </TabsContent>
                 <TabsContent value="audio">
@@ -299,64 +409,13 @@ export default function DnD() {
                             </div>
                         </div>
                     )}
-                    <form>
-                        <div className="flex flex-row w-full flex-wrap justify-between">
-                            <label>
-                                <b className="mb-1 px-1 md:block">Audio Bitrate</b>
-                                <Select>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="bitrate" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="320kbps">320kbps</SelectItem>
-                                    <SelectItem value="256kbps">256kbps</SelectItem>
-                                    <SelectItem value="192kbps">192kbps</SelectItem>
-                                    <SelectItem value="128kbps">128kbps</SelectItem>
-                                    <SelectItem value="64kbps">64kbps</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            </label>
-                            <label>
-                                <b className="mb-1 px-1 md:block">Audio Codec</b>
-                                <Select>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="codec" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="MP3">MP3</SelectItem>
-                                    <SelectItem value="AAC">AAC</SelectItem>
-                                    <SelectItem value="Opus">Opus</SelectItem>
-                                    <SelectItem value="WAV">WAV</SelectItem>
-                                    <SelectItem value="FLAC">FLAC</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            </label>
-                            <label>
-                                <b className="mb-1 px-1 md:block">Sample Rate</b>
-                                <Select>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="sample rate" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="48000">48000</SelectItem>
-                                    <SelectItem value="44100">44100</SelectItem>
-                                    <SelectItem value="22050">22050</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            </label>
-                        </div>
-                        <div className="mb-10 mt-3">
-                            <label>
-                                <b className="mx-2">Trim Audio : From</b>
-                                <input placeholder="00:00:00" value={startTime} className="border-solid border 
-                                border-black px-2 rounded-2xl mx-2" 
-                                onChange={(e) => setStartTime(e.target.value)} /> <b>To</b>
-                                <input placeholder="00:00:00" value={endTime} className="border-solid border 
-                                border-black px-2 rounded-2xl mx-2"
-                                onChange={(e) => setEndTime(e.target.value)} />
-                            </label>
-                        </div>
-                        <button type="button" className="rounded-3xl w-fit px-7 py-2 text-white bg-blue-700
+                    <form onSubmit={audioForm.handleSubmit(onAudioSubmit)}>
+                        <AudioSettings
+                            control={audioForm.control}
+                            register={audioForm.register}
+                            watch={audioForm.watch}
+                        />
+                        <button type="submit" className="rounded-3xl w-fit px-7 py-2 text-white bg-blue-700
                         mt-2 mb-5">
                             Compress
                         </button>
@@ -368,3 +427,7 @@ export default function DnD() {
     )
 }
 
+
+/**
+ * 
+ */
