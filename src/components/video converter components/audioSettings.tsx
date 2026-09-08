@@ -3,12 +3,12 @@
 import { Controller } from "react-hook-form"
 import type { Control, UseFormRegister, UseFormWatch } from "react-hook-form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { AudiOptions } from '@/types/compression';
+import type { AudioOptions } from '@/types/compression';
 
 type Props = {
-  control: Control<AudiOptions>
-  register: UseFormRegister<AudiOptions>
-  watch: UseFormWatch<AudiOptions>
+  control: Control<AudioOptions>
+  register: UseFormRegister<AudioOptions>
+  watch: UseFormWatch<AudioOptions>
 }
 
 export default function AudioSettings({ control, register}: Props) {
@@ -48,7 +48,7 @@ export default function AudioSettings({ control, register}: Props) {
                 </label>
                 <label>
                     <b className="mb-1 px-1 md:block">Sample Rate</b>
-                    <Controller control={control} name="SampleRate" render={({field}) => (
+                    <Controller control={control} name="sampleRate" render={({field}) => (
                         <Select value={field.value} onValueChange={field.onChange}>
                             <SelectTrigger><SelectValue placeholder="sample rate" /></SelectTrigger>
                             <SelectContent>
@@ -64,10 +64,10 @@ export default function AudioSettings({ control, register}: Props) {
             <div className="mb-10 mt-3">
                 <label>
                     <b className="mx-2">Trim Audio : From</b>
-                    <input placeholder="00:00:00" {...register("startTimeA")} className="border-solid border 
+                    <input placeholder="00:00:00" {...register("startTime")} className="border-solid border 
                     border-black px-2 rounded-2xl mx-2" />
                      <b>To</b>
-                    <input placeholder="00:00:00" {...register("endTimeA")} className="border-solid border 
+                    <input placeholder="00:00:00" {...register("endTime")} className="border-solid border 
                     border-black px-2 rounded-2xl mx-2" />
                 </label>
             </div>

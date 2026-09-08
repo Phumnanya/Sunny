@@ -68,16 +68,26 @@ export default function DnD() {
         }
     }, [videoUrl])
 
+    //useref for progress capture
+    const isRunningRef = useRef(false)
+
     useEffect(() => {
         const ffmpeg = ffmpegRef.current
 
         const handleProgress = ({ progress }: { progress: number }) => {
-            setCompressionProgress(Math.round(progress * 100))
+            if (!isRunningRef.current) return
+            const clamped = Math.min(100, Math.max(0, Math.round(progress * 100)))
+            setCompressionProgress(clamped)
+        }
+        const handleLog = ({ message }: { message: string }) => {
+            console.log("[ffmpeg]", message)
         }
         ffmpeg.on('progress', handleProgress)
+        ffmpeg.on('log', handleLog)
 
         return () => {
             ffmpeg.off('progress', handleProgress)
+            ffmpeg.off('log', handleLog)
         }
     }, [])
 
@@ -92,6 +102,7 @@ export default function DnD() {
 
             setCompressIsRunning(true)
             setCompressionProgress(0)
+            isRunningRef.current = true   // start accepting progress events
             setConversionStatus("Preparing media engine sandbox...")
 
             const extension =
@@ -134,7 +145,8 @@ export default function DnD() {
             await ffmpeg.exec(args)
 
             console.log("FFmpeg finished successfully")
-
+            isRunningRef.current = false
+            setCompressionProgress(100)
             setConversionStatus("Processing complete! Unpacking results...")
 
             // Read output
@@ -180,6 +192,8 @@ export default function DnD() {
         } catch (error) {
             console.error("Compression failed:", error)
             setConversionStatus("Compression failed.")
+            isRunningRef.current = false
+            setCompressIsRunning(false)
         }
     }
 
