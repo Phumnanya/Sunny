@@ -29,7 +29,6 @@ export default function DnD() {
     const [uploadIsRunning, setUploadIsRunning] = useState(false);
     const [compressionProgress, setCompressionProgress] = useState(0);
     const [compressIsRunning, setCompressIsRunning] = useState(false);
-    const [videoFile, setVideoFile] = useState<File | null>(null);
     const [downloadName, setDownloadName] = useState<string>("compressed-video.mp4")
 
     //new ffmpeg call/creation

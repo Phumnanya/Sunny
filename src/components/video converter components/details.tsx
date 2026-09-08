@@ -18,7 +18,7 @@ export default function Details() {
                 <List 
                 name="High quality" p="Preserve detail and clarity in every conversion" />
                 <List 
-                name="Multi-format support" p="Convert MP4, MOV, AVI, and other formats" />         
+                name="Multi-format support" p="Convert MP4, MOV, MKV, and other formats" />         
             </div>
             <p className="text-gray-500 mt-5">
             By uploading a file you agree to our <Link to="" className="underline">
