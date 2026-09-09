@@ -63,7 +63,7 @@ npm run build
 
 ```
 ├── src/
-│   ├── components/
+│   ├── components/video converter components
 │   │   ├── DnD.tsx              # Main upload + conversion submit handler
 │   │   ├── videoSettings.tsx    # Video option controls (crf, format, codec, quality, fps, trim)
 │   │   └── audioSettings.tsx    # Audio-specific option controls

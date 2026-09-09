@@ -30,6 +30,7 @@ export default function DnD() {
     const [compressionProgress, setCompressionProgress] = useState(0);
     const [compressIsRunning, setCompressIsRunning] = useState(false);
     const [downloadName, setDownloadName] = useState<string>("compressed-video.mp4")
+    const [newFileSize, setNewFileSize] = useState<string>("0.00");
 
     //new ffmpeg call/creation
     const ffmpegRef = useRef(new FFmpeg());
@@ -179,9 +180,11 @@ export default function DnD() {
                 URL.revokeObjectURL(videoUrl)
             }
             const url = URL.createObjectURL(blob)
+            const compressedFile = blob ? (blob.size / (1024 * 1024)).toFixed(2) : null;
 
             setVideoUrl(url)
             setDownloadName(outputName)
+            setNewFileSize(compressedFile)
             setConversionStatus("Ready to view and download!")
             setCompressIsRunning(false)
 
@@ -363,12 +366,12 @@ export default function DnD() {
                     { isVideo && previewURL && (
                         <div className="w-full flex flex-row items-center justify-between mb-10 rounded-lg border p-4">
                             <div>
-                                <p className="font-bold text-3xl">{fileSize}mb</p>
+                                <p className="font-bold text-3xl">{fileSize} mb</p>
                                 <p className="text-sm text-gray-600">Uploaded file size</p>
                             </div>
                             <div>
-                                <p className="font-bold text-3xl">10.00mb</p>
-                                <p className="text-sm text-gray-600">Compressed file size</p>
+                                <p className="font-bold text-3xl">{newFileSize} mb</p>
+                                <p className="text-sm text-gray-600">New compressed file size</p>
                             </div>
                         </div>
                     )}

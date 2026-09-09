@@ -1,19 +1,17 @@
-import Navbar from "../components/home page components/navbar"
-import Hero from "../components/home page components/hero"
-import Features from "../components/home page components/features"
-import Capabilities from "../components/home page components/capabilities"
-import Bottom from "../components/home page components/bottom-hero"
+import Navbar from "../components/navbar"
+import HeroContainer from "../components/video converter components/heroContainer"
+import Converter from "../components/video converter components/converter"
 import LinksContainer from "../components/foot-links-container"
 import Footer from "../components/footer"
+import WasmTest from "@/Test"
 
 export default function Home() {
     return(
         <>
             <Navbar />
-            <Hero />
-            <Features />
-            <Capabilities />
-            <Bottom />
+            <HeroContainer />
+            <Converter />
+            <WasmTest />
             <LinksContainer />
             <Footer />
         </>
