@@ -21,12 +21,13 @@ export default function AudioSettings({ control, register}: Props) {
                         <Select value={field.value} onValueChange={field.onChange}>
                             <SelectTrigger><SelectValue placeholder="bitrate" /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="64kbps">64kbps</SelectItem>
-                                <SelectItem value="96kbps">96kbps</SelectItem>
-                                <SelectItem value="128kbps">128kbps</SelectItem>
-                                <SelectItem value="192kbps">192kbps</SelectItem>
-                                <SelectItem value="256kbps">256kbps</SelectItem>
-                                <SelectItem value="320kbps">320kbps</SelectItem> 
+                                <SelectItem value="none">Same as Original</SelectItem>
+                                <SelectItem value="64k">64kbps</SelectItem>
+                                <SelectItem value="96k">96kbps</SelectItem>
+                                <SelectItem value="128k">128kbps</SelectItem>
+                                <SelectItem value="192k">192kbps</SelectItem>
+                                <SelectItem value="256k">256kbps</SelectItem>
+                                <SelectItem value="320k">320kbps</SelectItem> 
                             </SelectContent>
                         </Select>
                     )} />
@@ -37,10 +38,11 @@ export default function AudioSettings({ control, register}: Props) {
                         <Select value={field.value} onValueChange={field.onChange}>
                             <SelectTrigger><SelectValue placeholder="codec" /></SelectTrigger>
                             <SelectContent>
+                                <SelectItem value="none">Same as Original</SelectItem>
                                 <SelectItem value="libmp3lame">MP3</SelectItem>
                                 <SelectItem value="aac">AAC</SelectItem>
                                 <SelectItem value="libopus">Opus</SelectItem>
-                                <SelectItem value="wav">WAV</SelectItem>
+                                <SelectItem value="pcm_s16le">WAV</SelectItem>
                                 <SelectItem value="flac">FLAC</SelectItem>
                             </SelectContent>
                         </Select>
@@ -52,8 +54,9 @@ export default function AudioSettings({ control, register}: Props) {
                         <Select value={field.value} onValueChange={field.onChange}>
                             <SelectTrigger><SelectValue placeholder="sample rate" /></SelectTrigger>
                             <SelectContent>
+                                <SelectItem value="none">Same as Original</SelectItem>
                                 <SelectItem value="22050">22050</SelectItem>
-                                <SelectItem value="22050">32000</SelectItem>
+                                <SelectItem value="32000">32000</SelectItem>
                                 <SelectItem value="44100">44100</SelectItem>
                                 <SelectItem value="48000">48000</SelectItem>
                             </SelectContent>

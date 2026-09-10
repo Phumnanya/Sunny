@@ -8,6 +8,7 @@ export type VideoOptions = {
     format: string
     codec: string
     fps: string
+    preset: string // "ultrafast" | "veryfast" | "medium" | "slow" | "none"
 }
 
 export type AudioOptions = {

@@ -131,6 +131,20 @@ export default function VideoSettings({ control, register, watch}: Props) {
                         </Select>
                     )} />
                 </label>
+                <label>
+                    <b className="mb-1 px-1 md:block">Encoding Speed</b>
+                    <Controller control={control} name="preset" render={({field}) => (
+                        <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger><SelectValue placeholder="Speed" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="ultrafast">Fastest (larger file)</SelectItem>
+                                <SelectItem value="veryfast">Fast (recommended)</SelectItem>
+                                <SelectItem value="medium">Balanced</SelectItem>
+                                <SelectItem value="slow">Slower (smaller file)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    )} />
+                </label>
             </div>
         </>
     )

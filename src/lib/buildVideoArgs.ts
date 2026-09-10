@@ -24,6 +24,10 @@ export function BuildVideoArgs(options: VideoOptions, inputName: string, outputN
         args.push("-c:v", codec)
     }
 
+    if ((codec === "libx264" || codec === "libx265") && options.preset && options.preset !== "none") {
+        args.push("-preset", options.preset)
+    }
+
     if (codec === "libvpx-vp9" || codec === "libvpx") {
         args.push("-b:v", "0")
     }

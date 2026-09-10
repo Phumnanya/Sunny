@@ -46,20 +46,44 @@ export default function DnD() {
             quality: 'none',
             format: 'none',
             codec: 'auto',
-            fps: 'none'
+            fps: 'none',
+            preset: 'veryfast',
         },
     })
 
     //initialize the audio form
     const audioForm = useForm<AudioOptions>({
         defaultValues: {
-            bitrate: 'original',
-            audioCodec: 'original',
-            sampleRate: 'original',
-            startTime: 'original',
-            endTime: 'original'
+            bitrate: 'none',
+            audioCodec: 'none',
+            sampleRate: 'none',
+            startTime: '',
+            endTime: ''
             },
     })
+
+    const videoMimeTypes: Record<string, string> = {
+        mp4: "video/mp4",
+        mov: "video/quicktime",
+        mkv: "video/x-matroska",
+        webm: "video/webm",
+    }
+    
+    const audioExtensionMap: Record<string, string> = {
+        libmp3lame: "mp3",
+        aac: "m4a",
+        libopus: "opus",
+        pcm_s16le: "wav",
+        flac: "flac",
+    }
+
+    const audioMimeTypes: Record<string, string> = {
+        mp3: "audio/mpeg",
+        m4a: "audio/mp4",
+        opus: "audio/opus",
+        wav: "audio/wav",
+        flac: "audio/flac",
+    }
 
     //memory cleanup in case the component unmounts or user navigates away, or page re-renders
     useEffect(() => {
@@ -91,90 +115,62 @@ export default function DnD() {
         }
     }, [])
 
-    //submitting the video comression form
-    const onVideoSubmit = async (data: VideoOptions) => {
-         try {
-            console.log(data)
+    const compressMediaFile = async (
+        buildArgs: (inputName: string, outputName: string) => string[],
+        outputExtension: string,
+        mimeTypeMap: Record<string, string>
+    ) => {
+        if (!mediafile) return
+        const ffmpeg = ffmpegRef.current
 
-            if (!mediafile) return
-
-            const ffmpeg = ffmpegRef.current
-
+        try {
             setCompressIsRunning(true)
             setCompressionProgress(0)
             isRunningRef.current = true   // start accepting progress events
             setConversionStatus("Preparing media engine sandbox...")
 
-            const extension =
-                data.format === "none"
-                    ? mediafile.name.split(".").pop()!
-                    : data.format.toLowerCase()
+            const outputName = `compressed.${outputExtension}`
 
-            const outputName = `compressed.${extension}`
-
-            try {
-                await ffmpeg.deleteFile(mediafile.name)
-            } catch {
-                // file didn't exist, ignore
-            }
-            try {
-                await ffmpeg.deleteFile(outputName)
-            } catch {
-                // file didn't exist, ignore
-            }
+            try { await ffmpeg.deleteFile(mediafile.name) } catch {}
+            try { await ffmpeg.deleteFile(outputName) } catch {}
 
             await ffmpeg.writeFile(
                 mediafile.name,
                 await fetchFile(mediafile)
             )
-
             setConversionStatus("Analyzing editing options...")
 
-            const args = BuildVideoArgs(
-                data,
+            const args = buildArgs(
                 mediafile.name,
                 outputName
             )
-
             console.log("Output name:", outputName)
             console.log("FFmpeg args:", args)
 
-            // Run FFmpeg
             console.log("Starting FFmpeg execution...")
-
+            // Run FFmpeg
             await ffmpeg.exec(args)
-
             console.log("FFmpeg finished successfully")
+
             isRunningRef.current = false
             setCompressionProgress(100)
             setConversionStatus("Processing complete! Unpacking results...")
 
             // Read output
             console.log("Trying to read:", outputName)
-
             const output = await ffmpeg.readFile(outputName)
-
-            console.log("Output successfully read:", output)
 
             if (!(output instanceof Uint8Array)) {
                 throw new Error("Expected binary output from FFmpeg")
-            }
-
-            const videoMimeTypes: Record<string, string> = {
-                mp4: "video/mp4",
-                mov: "video/quicktime",
-                mkv: "video/x-matroska",
-                webm: "video/webm",
             }
 
             const blob = new Blob(
                 [new Uint8Array(output)],
                 {
                     type:
-                        videoMimeTypes[extension] ??
+                        mimeTypeMap[outputExtension] ??
                         "application/octet-stream",
-                }
-            )
+            })
             //memory cleanup so user can re-convert or run another operation
             if (videoUrl) {
                 URL.revokeObjectURL(videoUrl)
@@ -199,8 +195,32 @@ export default function DnD() {
         }
     }
 
-    //submitting the Audio compression form
-    const onAudioSubmit = async (data: AudioOptions) => {}
+    //wrapper for video submit
+    const onVideoSubmit = (data: VideoOptions) => {
+        console.log(data)
+        const extension =
+            data.format === "none"
+                ? mediafile.name.split(".").pop()!
+                : data.format.toLowerCase()
+
+        return compressMediaFile(
+            (i, o) => BuildVideoArgs(data, i, o),
+            extension,
+            videoMimeTypes
+        )
+    }
+
+    //wrapper for Audio submit
+    const onAudioSubmit = (data: AudioOptions) => {
+        console.log(data)
+        const extension = audioExtensionMap[data.audioCodec] ?? "mp3"
+
+        return compressMediaFile(
+            (i, o) => BuildAudioArgs(data, i, o),
+            extension,
+            audioMimeTypes
+        )
+    }
 
     // This handles the entire drag-and-drop state machine automatically
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -383,7 +403,7 @@ export default function DnD() {
                         />
                         <button type="submit" className="rounded-3xl w-fit px-7 py-2 text-white bg-blue-700
                         mt-12 mb-5">
-                            Compress
+                            Compress Video
                         </button>
                         {videoUrl && (
                             <div>
@@ -399,7 +419,7 @@ export default function DnD() {
                                 </div>
                             </div>
                         )}
-                
+            
                         <div className={`w-screen h-screen fixed inset-0 items-center bg-black/50 z-10 p-20 
                         justify-center ${compressIsRunning ? "flex flex-col" : "hidden"}`} id="loader">
                             <div className="flex flex-row justify-between items-center w-1/2 mx-auto px-10 pt-5 bg-white">
@@ -433,7 +453,7 @@ export default function DnD() {
                         />
                         <button type="submit" className="rounded-3xl w-fit px-7 py-2 text-white bg-blue-700
                         mt-2 mb-5">
-                            Compress
+                            Compress Audio
                         </button>
                     </form>
                 </TabsContent>
