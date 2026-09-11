@@ -148,6 +148,16 @@ export default function DnD() {
             console.log("FFmpeg args:", args)
 
             console.log("Starting FFmpeg execution...")
+
+            //check and catch error exit code
+            const exitCode = await ffmpeg.exec(args)
+
+            if (exitCode !== 0) {
+                throw new Error(`FFmpeg exited with code ${exitCode} — conversion failed`)
+            }
+
+            console.log("FFmpeg finished successfully")
+
             // Run FFmpeg
             await ffmpeg.exec(args)
             console.log("FFmpeg finished successfully")
@@ -411,7 +421,7 @@ export default function DnD() {
                                 <video src={videoUrl} controls className="w-full rounded-lg border border-slate-700" />
                                 <div>
                                     <a href={videoUrl} download={downloadName}>
-                                        <button type="submit" className="rounded-3xl w-fit px-7 py-2 text-white bg-blue-700
+                                        <button type="button" className="rounded-3xl w-fit px-7 py-2 text-white bg-blue-700
                                         mt-12 mb-5">
                                             Download {downloadName}
                                         </button>
@@ -461,7 +471,7 @@ export default function DnD() {
                                 <video src={videoUrl} controls className="w-full rounded-lg border border-slate-700" />
                                 <div>
                                     <a href={videoUrl} download={downloadName}>
-                                        <button type="submit" className="rounded-3xl w-fit px-7 py-2 text-white bg-blue-700
+                                        <button type="button" className="rounded-3xl w-fit px-7 py-2 text-white bg-blue-700
                                         mt-12 mb-5">
                                             Download {downloadName}
                                         </button>

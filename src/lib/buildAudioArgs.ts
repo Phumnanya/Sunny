@@ -1,7 +1,7 @@
 import type { AudioOptions } from "@/types/compression";
 
 export function BuildAudioArgs(options: AudioOptions, inputName: string, outputName: string) {
-    const args = ["-y","-i", inputName]
+    const args = ["-y","-i", inputName, "-vn"]
 
     const bitrateApplicable = options.audioCodec !== "pcm_s16le" && options.audioCodec !== "flac"
 
