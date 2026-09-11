@@ -1,4 +1,4 @@
-import Headers from "./header"
+import Intro from "./intro"
 import Subheading from "./subHeading"
 import List from "./List"
 import { Link } from "react-router-dom"
@@ -6,13 +6,13 @@ import { Link } from "react-router-dom"
 export default function Details() {
     return(
         <section className="w-full">
-            <div>
-                <Headers name="Convert Video Online" />
+            <div className="w-full">
+                <Intro name="Convert Media files Online" />
             </div>
             <div>
-                <Subheading name="Save videos in a format that fits" />
+                <Subheading name="Save videos/audio in a format that fits" />
             </div>
-            <div>
+            <div className="md:my-0 my-7">
                 <List 
                 name="Fast Conversion" p="Transform your files in seconds" />
                 <List 

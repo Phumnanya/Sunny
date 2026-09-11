@@ -342,18 +342,18 @@ export default function DnD() {
                     <input {...getInputProps()} className="hidden" id="myfile" name="myfile" />
                 </div>
             </div>
-            <div className={`w-screen h-screen fixed inset-0 items-center bg-black/50 z-10 p-20 
+            <div className={`w-screen h-screen fixed inset-0 items-center bg-black/50 z-10 md:p-20 p-6 
             justify-center ${uploadIsRunning ? "flex flex-col" : "hidden"}`} id="loader">
-                <div className="flex flex-row justify-between items-center w-1/2 mx-auto px-10 pt-5 bg-white">
+                <div className="flex flex-row justify-between items-center md:w-1/2 w-full mx-auto md:px-10 px-3 pt-5 bg-white">
                     <p>{status}</p>
                     <p>{uploadProgress} %</p>
                 </div>
-                <div className="bg-white w-1/2 px-10 pb-5 mx-auto">
+                <div className="bg-white md:w-1/2 w-full md:px-10 px-3 pb-5 md:pt-0 pt-5 mx-auto">
                     <Progress value={uploadProgress} className="m-auto" />
                 </div>
             </div>
         </section>
-        <section className="w-full border-3 border-groove p-10 mt-4 hidden" id="compressor">
+        <section className="w-full border-3 border-groove md:p-10 p-3 mt-4 hidden" id="compressor">
             { isVideo && previewURL && (
                 <>
                 <div className="w-60 rounded-lg border p-3">
@@ -377,7 +377,7 @@ export default function DnD() {
                 { mediafile.size > 1000 * 1024 * 1024 && (<span><Warning warning="1000mb" text="text-red-500" /></span>)}
                 </>
             )}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full px-10 mt-10">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full md:px-10 mt-10">
                 <TabsList variant="line" className="flex justify-between w-full mb-10">
                     <TabsTrigger value="video" disabled={!isVideo} className="disabled:opacity-40">Video</TabsTrigger>
                     <TabsTrigger value="audio" disabled={!isAudio} className="disabled:opacity-40">Audio</TabsTrigger>
@@ -386,12 +386,12 @@ export default function DnD() {
                     { isVideo && previewURL && (
                         <div className="w-full flex flex-row items-center justify-between mb-10 rounded-lg border p-4">
                             <div>
-                                <p className="font-bold text-3xl">{fileSize} mb</p>
+                                <p className="font-bold md:text-3xl text-2xl">{fileSize} mb</p>
                                 <p className="text-sm text-gray-600">Uploaded file size</p>
                             </div>
                             <div>
-                                <p className="font-bold text-3xl">{newFileSize} mb</p>
-                                <p className="text-sm text-gray-600">New compressed file size</p>
+                                <p className="font-bold md:text-3xl text-2xl">{newFileSize} mb</p>
+                                <p className="text-sm text-gray-600">New file size</p>
                             </div>
                         </div>
                     )}
@@ -402,7 +402,7 @@ export default function DnD() {
                             watch={videoForm.watch}
                         />
                         <button type="submit" className="rounded-3xl w-fit px-7 py-2 text-white bg-blue-700
-                        mt-12 mb-5">
+                        md:mt-12 mt-6 mb-5">
                             Compress Video
                         </button>
                         {videoUrl && (
@@ -420,13 +420,13 @@ export default function DnD() {
                             </div>
                         )}
             
-                        <div className={`w-screen h-screen fixed inset-0 items-center bg-black/50 z-10 p-20 
+                        <div className={`w-screen h-screen fixed inset-0 items-center bg-black/50 z-10 md:p-20 p-6 
                         justify-center ${compressIsRunning ? "flex flex-col" : "hidden"}`} id="loader">
-                            <div className="flex flex-row justify-between items-center w-1/2 mx-auto px-10 pt-5 bg-white">
+                            <div className="flex flex-row justify-between items-center md:w-1/2 w-full mx-auto md:px-10 px-3 pt-5 bg-white">
                                 <p>{ConversionStatus}</p>
                                 <p>{compressionProgress} %</p>
                             </div>
-                            <div className="bg-white w-1/2 px-10 pb-5 mx-auto">
+                            <div className="bg-white md:w-1/2 w-full md:px-10 px-3 pb-5 md:pt-0 pt-5 mx-auto">
                                 <Progress value={compressionProgress} className="m-auto" />
                             </div>
                         </div>
@@ -436,12 +436,12 @@ export default function DnD() {
                     { isAudio && previewURL && (
                         <div className="w-full flex flex-row items-center justify-between mb-10 rounded-lg border p-4">
                             <div>
-                                <p className="font-bold text-3xl">{fileSize}mb</p>
+                                <p className="font-bold md:text-3xl text-2xl">{fileSize} mb</p>
                                 <p className="text-sm text-gray-600">Uploaded file size</p>
                             </div>
                             <div>
-                                <p className="font-bold text-3xl">10.00mb</p>
-                                <p className="text-sm text-gray-600">Compressed file size</p>
+                                <p className="font-bold md:text-3xl text-2xl">{newFileSize} mb</p>
+                                <p className="text-sm text-gray-600">New file size</p>
                             </div>
                         </div>
                     )}
@@ -455,6 +455,31 @@ export default function DnD() {
                         mt-2 mb-5">
                             Compress Audio
                         </button>
+                        {videoUrl && (
+                            <div>
+                                <h3 className="text-md font-bold mb-2 text-green-400">Output Result (Processed locally):</h3>
+                                <video src={videoUrl} controls className="w-full rounded-lg border border-slate-700" />
+                                <div>
+                                    <a href={videoUrl} download={downloadName}>
+                                        <button type="submit" className="rounded-3xl w-fit px-7 py-2 text-white bg-blue-700
+                                        mt-12 mb-5">
+                                            Download {downloadName}
+                                        </button>
+                                    </a>
+                                </div>
+                            </div>
+                        )}
+            
+                        <div className={`w-screen h-screen fixed inset-0 items-center bg-black/50 z-10 md:p-20 p-6 
+                        justify-center ${compressIsRunning ? "flex flex-col" : "hidden"}`} id="loader">
+                            <div className="flex flex-row justify-between items-center md:w-1/2 w-full mx-auto md:px-10 px-3 pt-5 bg-white">
+                                <p>{ConversionStatus}</p>
+                                <p>{compressionProgress} %</p>
+                            </div>
+                            <div className="bg-white md:w-1/2 w-full md:px-10 px-3 pb-5 md:pt-0 pt-5 mx-auto">
+                                <Progress value={compressionProgress} className="m-auto" />
+                            </div>
+                        </div>
                     </form>
                 </TabsContent>
             </Tabs>

@@ -52,11 +52,11 @@ export default function VideoSettings({ control, register, watch}: Props) {
                     </div>
                     )}
                 />
-                <div>
+                <div className="md:mt-0 mt-5">
                     <label>
-                        <b className="mx-2">Trim Video : From</b>
+                        <b className="md:mx-2">Trim Video : From</b>
                         <input placeholder="00:00:00" {...register("startTime")} className="border-solid border 
-                        border-black px-2 rounded-2xl mx-2" 
+                        border-black px-2 rounded-2xl md:mx-2 md:ml-0 ml-2 md:mb-0 mb-2" 
                         //onChange={(e) => setStartTime(e.target.value)} 
                         /> <b>To</b>
                         <input placeholder="00:00:00" {...register("endTime")} className="border-solid border 

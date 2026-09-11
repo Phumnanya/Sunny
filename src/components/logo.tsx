@@ -4,7 +4,7 @@ type Props = {
 
 export default function Logo({image}: Props) {
     return(
-        <div className="w-16 h-16">
+        <div className="md:w-16 md:h-16 w-10 h-10">
             <img src={image} alt="logo" className="m-auto w-full object-contain" />
         </div>
     )

@@ -3,7 +3,7 @@ import Links from "./links"
 export default function LinksContainer() {
     return(
         <nav className="flex flex-row items-center center bg-gray-100 
-        w-full h-fit p-20 box-border border-b border-solid border-gray-300">
+        w-full h-fit md:p-20 box-border border-b border-solid border-gray-300">
             <div className="w-1/5">
                 <div className="w-full flex flex-col space-between">
                     <Links link="Video Editor" />
