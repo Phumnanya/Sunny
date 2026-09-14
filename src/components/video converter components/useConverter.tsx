@@ -138,7 +138,7 @@ export default function useConverter(mediafile: File | null, ffmpegRef: React.Re
                 URL.revokeObjectURL(videoUrl)
             }
             const url = URL.createObjectURL(blob)
-            const compressedFile = blob ? (blob.size / (1024 * 1024)).toFixed(2) : null;
+            const compressedFile = (blob.size / (1024 * 1024)).toFixed(2);
 
             setVideoUrl(url)
             setDownloadName(outputName)
@@ -159,7 +159,8 @@ export default function useConverter(mediafile: File | null, ffmpegRef: React.Re
 
     //wrapper for video submit
     const onVideoSubmit = (data: VideoOptions) => {
-        console.log(data)
+        if (!mediafile) return;
+        
         const extension =
             data.format === "none"
                 ? mediafile.name.split(".").pop()!

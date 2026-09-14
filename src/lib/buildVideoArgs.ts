@@ -63,8 +63,9 @@ export function BuildVideoArgs(options: VideoOptions, inputName: string, outputN
         "480p": "scale=-2:480",
         "360p": "scale=-2:360",
     }
-    if (options.quality !== "none" && qualityMap[options.quality]) {
-        args.push("-vf", qualityMap[options.quality])
+    const scaleFilter = qualityMap[options.quality]
+    if (options.quality !== "none" && scaleFilter) {
+        args.push("-vf", scaleFilter)
     }
 
     args.push(outputName)

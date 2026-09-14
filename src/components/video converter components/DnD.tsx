@@ -20,7 +20,6 @@ import { toBlobURL } from '@ffmpeg/util';
 export default function DnD() {
     
     const [mediafile, setMediaFile] = useState<File | null>(null);
-    const [loaded, setLoaded] = useState(false);
     const [status, setStatus] = useState('');
     const [uploadProgress, setUploadProgress] = useState(0);
     const [uploadIsRunning, setUploadIsRunning] = useState(false);
@@ -128,17 +127,19 @@ export default function DnD() {
 
     //automatically switch tabs between video & audio depending on type of file uploaded
     useEffect(() => {
-        if(isVideo) {
-            document.getElementById("fileUpload").style.display = "none";
-            document.getElementById("compressor").style.display = "block";
-            setActiveTab("video")
+        const fileUpload = document.getElementById("fileUpload");
+        const compressor = document.getElementById("compressor");
+
+        if (isVideo) {
+            if (fileUpload) fileUpload.style.display = "none";
+            if (compressor) compressor.style.display = "block";
+            setActiveTab("video");
+        } else if (isAudio) {
+            if (fileUpload) fileUpload.style.display = "none";
+            if (compressor) compressor.style.display = "block";
+            setActiveTab("audio");
         }
-        else if (isAudio) {
-            document.getElementById("fileUpload").style.display = "none";
-            document.getElementById("compressor").style.display = "block";
-            setActiveTab("audio")
-        }
-    }, [isVideo, isAudio])
+    }, [isVideo, isAudio]);
 
     
     //Load FFmpeg library into the browser page from files
@@ -158,7 +159,6 @@ export default function DnD() {
         wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
         });
         
-        setLoaded(true);
         setStatus('FFmpeg Ready for Action!');
         console.log("Upload successful....", status);
     };
@@ -200,7 +200,7 @@ export default function DnD() {
             </div>
         </section>
         <section className="w-full border-3 border-groove md:p-10 p-3 mt-4 hidden" id="compressor">
-            { isVideo && previewURL && (
+            { isVideo && mediafile && previewURL && (
                 <>
                 <div className="w-60 rounded-lg border p-3">
                     <video src={previewURL} className="w-full h-40 object-cover rounded" muted />
@@ -211,7 +211,7 @@ export default function DnD() {
                 { mediafile.size > 1000 * 1024 * 1024 && (<span><Warning warning="1000mb" text="text-red-500" /></span>)}
                 </>
             )}
-            { isAudio && previewURL && (
+            { isAudio && mediafile && previewURL && (
                 <>
                 <div className="w-60 rounded-lg border p-4 flex items-center gap-3">
                     <div><Music size={20} /></div>
@@ -229,7 +229,7 @@ export default function DnD() {
                     <TabsTrigger value="audio" disabled={!isAudio} className="disabled:opacity-40">Audio</TabsTrigger>
                 </TabsList>
                 <TabsContent value="video">
-                    { isVideo && previewURL && (
+                    { isVideo && mediafile && previewURL && (
                         <div className="w-full flex flex-row items-center justify-between mb-10 rounded-lg border p-4">
                             <div>
                                 <p className="font-bold md:text-3xl text-2xl">{fileSize} mb</p>
@@ -251,7 +251,7 @@ export default function DnD() {
                         md:mt-12 mt-6 mb-5">
                             Compress Video
                         </button>
-                        {videoUrl && (
+                        {videoUrl && mediafile && (
                             <div>
                                 <h3 className="text-md font-bold mb-2 text-green-400">Output Result (Processed locally):</h3>
                                 <video src={videoUrl} controls className="w-full rounded-lg border border-slate-700" />
@@ -279,7 +279,7 @@ export default function DnD() {
                     </form>
                 </TabsContent>
                 <TabsContent value="audio">
-                    { isAudio && previewURL && (
+                    { isAudio && mediafile && previewURL && (
                         <div className="w-full flex flex-row items-center justify-between mb-10 rounded-lg border p-4">
                             <div>
                                 <p className="font-bold md:text-3xl text-2xl">{fileSize} mb</p>
@@ -301,7 +301,7 @@ export default function DnD() {
                         mt-2 mb-5">
                             Compress Audio
                         </button>
-                        {videoUrl && (
+                        {videoUrl && mediafile && (
                             <div>
                                 <h3 className="text-md font-bold mb-2 text-green-400">Output Result (Processed locally):</h3>
                                 <video src={videoUrl} controls className="w-full rounded-lg border border-slate-700" />
